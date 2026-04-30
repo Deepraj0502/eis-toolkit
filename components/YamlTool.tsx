@@ -91,14 +91,14 @@ export default function YamlTool({ onBack }: { onBack: () => void }) {
   };
 
   return (
-    <div className="h-[calc(100vh-140px)] flex flex-col gap-6 font-sans">
+    <div className="flex flex-col gap-6 font-sans">
       <div className="flex-none flex items-center justify-between">
         <button onClick={onBack} className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold hover:opacity-75 transition-all">
           <LayoutDashboard size={20} /> Back to Dashboard
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden min-h-0">
+      <div className="flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden min-h-0 flex-col gap-[50px]">
         <div className="flex-1 flex flex-col gap-6 min-h-0">
           <div className="flex-none bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
             <h3 className="font-bold mb-3 flex items-center gap-2 dark:text-white text-sm uppercase tracking-wider">
