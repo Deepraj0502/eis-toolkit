@@ -3,11 +3,15 @@ import {
   THIRDPARTY_CCSID_BASE64,
   BANK_NORMAL_BASE64,
   BANK_TH_BASE64,
-  BANK_BTH_BASE64
+  BANK_BTH_BASE64,
+  NBC_TEMPLATE,
+  SERVICE_STANDARD_BASE64,
+  SERVICE_NBC_BASE64
 } from "../assets/templateData";
 
 export type ThirdPartyVariant = "standard" | "ccsid";
-export type BankVariant = "normal" | "th" | "bth";
+export type ServiceVariant = "standard" | "nbc";
+export type BankVariant = "normal" | "th" | "bth" | "nbc";
 
 export interface TemplateProfile {
   /** Stable machine key, e.g. "thirdparty-standard" */
@@ -62,6 +66,30 @@ export const THIRDPARTY_PROFILES: Record<ThirdPartyVariant, TemplateProfile> = {
 };
 
 // ---------------------------------------------------------------------------
+// Service templates (e.g. NBC starter + standard service)
+// ---------------------------------------------------------------------------
+export const SERVICE_PROFILES: Record<ServiceVariant, TemplateProfile> = {
+  standard: {
+    key: "service-standard",
+    label: "Service Template (Standard)",
+    templateProject: "serviceTemplate_expDS",
+    templateService: "serviceTemplate",
+    suffix: "",
+    base64: SERVICE_STANDARD_BASE64,
+    isBank: false
+  },
+  nbc: {
+    key: "service-nbc",
+    label: "Service Template (NBC)",
+    templateProject: "serviceTemplate_NBC_sys",
+    templateService: "serviceTemplate",
+    suffix: "",
+    base64: SERVICE_NBC_BASE64,
+    isBank: false
+  }
+};
+
+// ---------------------------------------------------------------------------
 // Bank wrapper templates
 //
 // templateProject / templateService below are set to match the sample
@@ -99,6 +127,16 @@ export const BANK_PROFILES: Record<BankVariant, TemplateProfile> = {
     templateService: "TransferClosureDepositAmend",
     suffix: "",
     base64: BANK_BTH_BASE64,
+    isBank: true
+  }
+  ,
+  nbc: {
+    key: "bank-nbc",
+    label: "Bank Wrapper (NBC)",
+    templateProject: "TransferClosureDepositAmend_NBC_sys",
+    templateService: "TransferClosureDepositAmend",
+    suffix: "",
+    base64: NBC_TEMPLATE,
     isBank: true
   }
 };

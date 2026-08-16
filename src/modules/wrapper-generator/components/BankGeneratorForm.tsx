@@ -14,13 +14,15 @@ interface Props {
   swaggerFileName: string | null;
   onSwaggerFileNameChange: (name: string | null) => void;
   generate: () => void;
+  generateStarterPack?: () => void;
   loading: boolean;
 }
 
 const BANK_VARIANT_OPTIONS: { value: BankVariant; label: string }[] = [
   { value: "normal", label: "Normal" },
   { value: "th", label: "TH" },
-  { value: "bth", label: "BTH" }
+  { value: "bth", label: "BTH" },
+  { value: "nbc", label: "NBC" }
 ];
 
 export default function BankGeneratorForm({
@@ -88,14 +90,16 @@ export default function BankGeneratorForm({
             renamed to match the API name.
           </p>
 
-          <button
-            onClick={generate}
-            disabled={!canGenerate}
-            className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Rocket className="h-4 w-4" />
-            {loading ? "Generating wrapper..." : "Generate Bank Wrapper"}
-          </button>
+          <div className="grid gap-2">
+            <button
+              onClick={generate}
+              disabled={!canGenerate}
+              className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Rocket className="h-4 w-4" />
+              {loading ? "Generating service..." : "Generate Service"}
+            </button>
+          </div>
         </div>
       </SectionCard>
     </div>

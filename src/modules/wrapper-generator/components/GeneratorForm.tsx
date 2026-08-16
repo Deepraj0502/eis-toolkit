@@ -2,14 +2,15 @@ import { type Dispatch, type SetStateAction } from "react";
 import { FileArchive, Rocket, Settings2 } from "lucide-react";
 import FormField from "./FormField";
 import SectionCard from "./SectionCard";
-import type { ThirdPartyVariant, WrapperRequest } from "../types/Generator";
+import type { ThirdPartyVariant, WrapperRequest, ServiceVariant } from "../types/Generator";
 
-interface Props {
+interface Props<V extends string> {
   request: WrapperRequest;
   setRequest: Dispatch<SetStateAction<WrapperRequest>>;
-  variant: ThirdPartyVariant;
-  onVariantChange: (variant: ThirdPartyVariant) => void;
+  variant: V;
+  onVariantChange: Dispatch<SetStateAction<V>>;
   generate: () => void;
+  generateStarterPack?: () => void;
   loading: boolean;
 }
 
@@ -18,14 +19,15 @@ const VARIANT_OPTIONS: { value: ThirdPartyVariant; label: string; template: stri
   { value: "ccsid", label: "CCSID", template: "thirdPartyGenericRouting_CCSID_expDS" }
 ];
 
-export default function GeneratorForm({
+export default function GeneratorForm<V extends ThirdPartyVariant | ServiceVariant>({
   request,
   setRequest,
   variant,
   onVariantChange,
   generate,
+  generateStarterPack,
   loading
-}: Props) {
+}: Props<V>) {
   function update(field: keyof WrapperRequest, value: string) {
     setRequest((prev) => ({
       ...prev,
@@ -45,9 +47,9 @@ export default function GeneratorForm({
                 key={option.value}
                 type="button"
                 disabled={loading}
-                onClick={() => onVariantChange(option.value)}
+                onClick={() => onVariantChange(option.value as unknown as V)}
                 className={`rounded-xl border px-3.5 py-3 text-left text-sm transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                  variant === option.value
+                  variant === (option.value as unknown as V)
                     ? "border-indigo-500 bg-indigo-500/10 text-slate-100"
                     : "border-slate-800 bg-[#0f1424] text-slate-400 hover:border-slate-700"
                 }`}
@@ -121,6 +123,15 @@ export default function GeneratorForm({
             <Rocket className="h-4 w-4" />
             {loading ? "Generating wrapper..." : "Generate Wrapper"}
           </button>
+          {generateStarterPack && (
+            <button
+              onClick={() => generateStarterPack && generateStarterPack()}
+              disabled={loading}
+              className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Generate Service Starter Pack
+            </button>
+          )}
         </div>
       </SectionCard>
     </div>

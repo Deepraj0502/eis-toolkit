@@ -9,7 +9,7 @@ import Generator from "./engines/Generator";
 import { useGenerator } from "./hooks/useGenerator";
 import type { BankVariant, ThirdPartyVariant, WrapperRequest } from "./types/Generator";
 
-type Mode = "thirdparty" | "bank";
+type Mode = "thirdparty" | "bank" | "service";
 
 export default function WrapperGenerator() {
   const { state, setState, addLog, updateProgress } = useGenerator();
@@ -27,7 +27,6 @@ export default function WrapperGenerator() {
     author: ""
   });
   const [thirdPartyVariant, setThirdPartyVariant] = useState<ThirdPartyVariant>("standard");
-
   // Bank wrapper state
   const [bankApiName, setBankApiName] = useState("");
   const [bankVariant, setBankVariant] = useState<BankVariant>("normal");
@@ -125,10 +124,46 @@ export default function WrapperGenerator() {
     }
   }
 
+  async function generateBankStarterPack() {
+    if (!bankApiName.trim()) {
+      addLog("error", "API Name is required.");
+      pushToast("error", "API Name is required.");
+      return;
+    }
+    if (!bankSwaggerText.trim()) {
+      addLog("error", "Swagger content is required.");
+      pushToast("error", "Drop a swagger file or paste its content first.");
+      return;
+    }
+
+    resetRunState();
+    addLog("info", "Initialization started...");
+    pushToast("info", "Banks starter pack generation started.");
+    try {
+      await generator.generateBankStarterPack(
+        {
+          apiName: bankApiName,
+          swaggerFileName: bankSwaggerFileName || "swagger.json",
+          swaggerText: bankSwaggerText
+        },
+        addLog,
+        updateProgress
+      );
+      addLog("success", "Banks starter pack generated successfully! Ready to download.");
+      pushToast("success", "Banks starter pack archive generated and downloaded.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      addLog("error", message);
+      pushToast("error", message);
+    } finally {
+      setState((prev) => ({ ...prev, loading: false }));
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#05070f] text-slate-100">
       <div className="mx-auto flex max-w-[1700px] flex-col gap-6 p-6">
-        <WrapperHeader title="IBM ACE Wrapper Generator" subtitle="Back to Dashboard" />
+        <WrapperHeader title="IBM ACE Service Generator" subtitle="Back to Dashboard" />
 
         <div className="flex w-fit gap-2 rounded-xl border border-slate-800 bg-[#0b0f1d] p-1.5">
           <button
@@ -139,7 +174,7 @@ export default function WrapperGenerator() {
               mode === "thirdparty" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            Third-Party Wrapper
+            Third-Party Service
           </button>
           <button
             type="button"
@@ -149,13 +184,13 @@ export default function WrapperGenerator() {
               mode === "bank" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            Bank Wrapper
+            Bank Service
           </button>
         </div>
 
         <ProgressTimeline progress={state.progress} />
         <div className="grid gap-6 xl:grid-cols-[1.15fr_1fr]">
-          {mode === "thirdparty" ? (
+          {mode === "thirdparty" && (
             <GeneratorForm
               request={request}
               setRequest={setRequest}
@@ -164,7 +199,9 @@ export default function WrapperGenerator() {
               generate={generateThirdParty}
               loading={state.loading}
             />
-          ) : (
+          )}
+
+          {mode === "bank" && (
             <BankGeneratorForm
               apiName={bankApiName}
               onApiNameChange={setBankApiName}
@@ -175,6 +212,7 @@ export default function WrapperGenerator() {
               swaggerFileName={bankSwaggerFileName}
               onSwaggerFileNameChange={setBankSwaggerFileName}
               generate={generateBank}
+              generateStarterPack={generateBankStarterPack}
               loading={state.loading}
             />
           )}

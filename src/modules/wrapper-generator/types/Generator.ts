@@ -1,4 +1,4 @@
-import type { BankVariant, ThirdPartyVariant } from "../config/templateProfiles";
+import type { BankVariant, ThirdPartyVariant, ServiceVariant } from "../config/templateProfiles";
 
 export interface WrapperRequest {
   apiName: string;
@@ -26,7 +26,7 @@ export interface BankWrapperRequest {
   swaggerText: string;
 }
 
-export type { ThirdPartyVariant, BankVariant };
+export type { ThirdPartyVariant, BankVariant, ServiceVariant };
 
 export interface LogEntry {
     id: number;
