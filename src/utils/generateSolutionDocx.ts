@@ -695,6 +695,10 @@ export async function generateSolutionDocx(form: SolutionDocFormState) {
               createRow([{ text: "SI001", alignment: AlignmentType.CENTER }, { text: "SI530|INCORRECT REQUEST FORMATION" }, { text: "Issues With Request String" }]),
               createRow([{ text: "SI001", alignment: AlignmentType.CENTER }, { text: "SI530|DATA PROCESSING FAILED" }, { text: "Issues with encryption library invoke" }]),
               createRow([{ text: "SI001", alignment: AlignmentType.CENTER }, { text: "SI599|UNABLE TO PROCESS DUE TO TECHNICAL ERROR" }, { text: "Any other unhandled error" }]),
+              createRow([{ text: "SI095", alignment: AlignmentType.CENTER }, { text: "REFERENCE NUMBER NOT OF 25 CHAR" }, { text: "Reference number of invalid length." }]),
+              createRow([{ text: "SI094", alignment: AlignmentType.CENTER }, { text: "REFERENCE NUMBER NOT UNIQUE" }, { text: "Reference number is not unique." }]),
+              createRow([{ text: "SI096", alignment: AlignmentType.CENTER }, { text: "REFERENCE NUMBER AND SOURCE ID MISMATCH" }, { text: "Reference number source id and provided source id is different." }]),
+              createRow([{ text: "SI097", alignment: AlignmentType.CENTER }, { text: "REFERENCE NUMBER IS NOT OF FORMAT SBIXXXXX" }, { text: "Reference number not starting with SBI." }]),
             ],
           }),
           new Paragraph({ text: "" }),
@@ -716,6 +720,12 @@ export async function generateSolutionDocx(form: SolutionDocFormState) {
                     createRow([{ text: "SI011", alignment: AlignmentType.CENTER }, { text: "Unable to process due to validation error!!" }, { text: "Describes the request decryption fails at EIS ends" }]),
                     createRow([{ text: "SI051", alignment: AlignmentType.CENTER }, { text: "Unauthorized" }, { text: "Describes EIS unable to authenticate the sender." }]),
                     createRow([{ text: "SI001", alignment: AlignmentType.CENTER }, { text: "-" }, { text: "Dynamic in nature which will be represent error as per the exception occurred." }]),
+
+                    createRow([{ text: "SI409", alignment: AlignmentType.CENTER }, { text: "DIGI_SIGN Missing in Encrypted Request!!" }, { text: "Digi Sign field is missing." }]),
+                    createRow([{ text: "SI406", alignment: AlignmentType.CENTER }, { text: "AccessToken Missing in Encrypted Request Header!!" }, { text: "Access Token field is missing." }]),
+                    createRow([{ text: "SI405", alignment: AlignmentType.CENTER }, { text: "SOURCE ID missing!!" }, { text: "Source ID is missing." }]),
+                    createRow([{ text: "SI411", alignment: AlignmentType.CENTER }, { text: "RSA decryption Failed" }, { text: "RSA Decryption of Access Token failed." }]),
+                    createRow([{ text: "SI413", alignment: AlignmentType.CENTER }, { text: "DIGI-SIGN verification failed!!" }, { text: "Digi Sign verification failed." }]),
                   ]
                 : [
                     createRow([{ text: "SI411", alignment: AlignmentType.CENTER }, { text: "RSA decryption Failed" }, { text: "Unauthorized : RSA decryption Failed" }]),
