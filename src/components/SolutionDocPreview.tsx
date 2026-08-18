@@ -699,6 +699,10 @@ export default function SolutionDocPreview({ form }: Props) {
             ["SI001", "SI530|INCORRECT REQUEST FORMATION", "Issues With Request String"],
             ["SI001", "SI530|DATA PROCESSING FAILED", "Issues with encryption library invoke"],
             ["SI001", "SI599|UNABLE TO PROCESS DUE TO TECHNICAL ERROR", "Any other unhandled error"],
+            ["SI095", "REFERENCE NUMBER NOT OF 25 CHAR", "Reference number of invalid length."],
+            ["SI094", "REFERENCE NUMBER NOT UNIQUE", "Reference number is not unique."],
+            ["SI096", "REFERENCE NUMBER AND SOURCE ID MISMATCH", "Reference number source id and provided source id is different."],
+            ["SI097", "REFERENCE NUMBER IS NOT OF FORMAT SBIXXXXX", "Reference number not starting with SBI."]
           ].map(([ec, ed, m], idx) => (
             <tr key={idx}>
               <td className="border border-black p-2 text-center">{ec}</td>
@@ -728,6 +732,11 @@ export default function SolutionDocPreview({ form }: Props) {
               ["SI011", "Unable to process due to validation error!!", "Describes the request decryption fails at EIS ends"],
               ["SI051", "Unauthorized", "Describes EIS unable to authenticate the sender."],
               ["SI001", "-", "Dynamic in nature which will be represent error as per the exception occurred."],
+              ["SI409", "DIGI_SIGN Missing in Encrypted Request!!", "Digi Sign field is missing."],
+              ["SI406", "AccessToken Missing in Encrypted Request Header!!", "Access Token field is missing."],
+              ["SI405", "SOURCE ID missing!!", "Source ID is missing."],
+              ["SI411", "RSA decryption Failed", "RSA Decryption of Access Token failed."],
+              ["SI413", "DIGI-SIGN verification failed!!", "Digi Sign verification failed."]
             ].map(([ec, ed, m], idx) => (
               <tr key={idx}>
                 <td className="border border-black p-2 text-center">{ec}</td>
