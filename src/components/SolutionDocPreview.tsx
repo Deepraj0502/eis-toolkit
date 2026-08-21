@@ -693,7 +693,7 @@ export default function SolutionDocPreview({ form }: Props) {
             ["SI002", "SI510|EIS APPLICATION INACTIVE", "unhandled exception while calling SYS from EXP"],
             ["SI011", "SI520|INCORRECT DATA IN <TAG_NAME>", "Invalid Data for <dynamic field name>, ParserException xmlnsc"],
             ["SI011", "SI520|MISSING FIELD <TAG_NAME>", "Missing field (field name will not be provided), ParserException xmlnsc"],
-            ["SI011", "SI520|EXCESS FIELD PROVIDED <TAG_NAME>", "Excess field provided (field name will not be provided), No root element was found while writing the XML message"],
+            ["SI011", "SI520|UNEXPECTED FIELD <TAG_NAME>", "Unexpected field provided (field name will not be provided), No root element was found while writing the XML message"],
             ["SI011", "SI520|PARSING EXCEPTION", "5706-JSON writing errors have occurred"],
             ["SI011", "SI520|CASTING EXCEPTION", "CastException"],
             ["SI001", "SI530|INCORRECT REQUEST FORMATION", "Issues With Request String"],
