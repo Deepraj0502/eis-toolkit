@@ -689,7 +689,7 @@ export async function generateSolutionDocx(form: SolutionDocFormState) {
               createRow([{ text: "SI002", alignment: AlignmentType.CENTER }, { text: "SI510|EIS APPLICATION INACTIVE" }, { text: "unhandled exception while calling SYS from EXP" }]),
               createRow([{ text: "SI011", alignment: AlignmentType.CENTER }, { text: "SI520|INCORRECT DATA IN <TAG_NAME>" }, { text: "Invalid Data for <dynamic field name>,\nParserException xmlnsc" }]),
               createRow([{ text: "SI011", alignment: AlignmentType.CENTER }, { text: "SI520|MISSING FIELD <TAG_NAME>" }, { text: "Missing field (field name will not be provided).\nParserException xmlnsc" }]),
-              createRow([{ text: "SI011", alignment: AlignmentType.CENTER }, { text: "SI520|EXCESS FIELD PROVIDED <TAG_NAME>" }, { text: "Excess field provided (field name will not be provided). No root element was found while writing the XML message" }]),
+              createRow([{ text: "SI011", alignment: AlignmentType.CENTER }, { text: "SI520|UNEXPECTED FIELD <TAG_NAME>" }, { text: "Excess field provided (field name will not be provided). No root element was found while writing the XML message" }]),
               createRow([{ text: "SI011", alignment: AlignmentType.CENTER }, { text: "SI520|PARSING EXCEPTION" }, { text: "5706-JSON writing errors have occurred" }]),
               createRow([{ text: "SI011", alignment: AlignmentType.CENTER }, { text: "SI520|CASTING EXCEPTION" }, { text: "CastException" }]),
               createRow([{ text: "SI001", alignment: AlignmentType.CENTER }, { text: "SI530|INCORRECT REQUEST FORMATION" }, { text: "Issues With Request String" }]),
