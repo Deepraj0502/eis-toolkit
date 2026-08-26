@@ -425,13 +425,25 @@ function validateStatement(
             // });
 
             // Rule: If FIELD_NAME contains EIS_DMZ, FIELD_VALUE must have siservices.bank.sbi
-            if (fieldNameIdx !== -1 && fieldValueIdx !== -1 && vals[fieldNameIdx] && vals[fieldValueIdx]) {
-              const fnVal = vals[fieldNameIdx].replace(/^'|'$/g, '');
-              const fvVal = vals[fieldValueIdx].replace(/^'|'$/g, '');
-              if (fnVal.includes('EIS_DMZ') && !fvVal.toLowerCase().includes('siservices.bank.sbi')) {
-                push('error', `FIELD_NAME containing EIS_DMZ must have "siservices.bank.sbi" as domain in FIELD_VALUE (row ${tIdx + 1}).`);
+            if (Environment == "PROD") {
+              if (fieldNameIdx !== -1 && fieldValueIdx !== -1 && vals[fieldNameIdx] && vals[fieldValueIdx]) {
+                  const fnVal = vals[fieldNameIdx].replace(/^'|'$/g, '');
+                  const fvVal = vals[fieldValueIdx].replace(/^'|'$/g, '');
+                  if (fnVal.includes('EIS_DMZ') && !fvVal.toLowerCase().includes('siservices.bank.sbi')) {
+                      push('error', `FIELD_NAME containing EIS_DMZ must have "siservices.bank.sbi" as domain in FIELD_VALUE (row ${tIdx + 1}).`);
+                  }
               }
-            }
+          }
+          else {
+              if (fieldNameIdx !== -1 && fieldValueIdx !== -1 && vals[fieldNameIdx] && vals[fieldValueIdx]) {
+                  const fnVal = vals[fieldNameIdx].replace(/^'|'$/g, '');
+                  const fvVal = vals[fieldValueIdx].replace(/^'|'$/g, '');
+                  if (fnVal.includes('EIS_DMZ') && !fvVal.toLowerCase().includes('eissiwebuat.bank.sbi')) {
+                      push('error', `FIELD_NAME containing EIS_DMZ must have "eissiwebuat.bank.sbi" as domain in FIELD_VALUE (row ${tIdx + 1}).`);
+                  }
+              }
+          }
+            
           });
         }
       }
