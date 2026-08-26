@@ -10,6 +10,7 @@ import {
   Globe,
   Server,
   ListChecks,
+  Shield,
 } from "lucide-react";
 import { CopyButton } from "./CopyButton";
 
@@ -60,7 +61,6 @@ interface CacheFormState {
   sourceIds: string;
   thirdPartyUrl: string;
   dmzUrl: string;
-  wireDmzInMaster: boolean;
   contentCheck: YesNoD;
   serviceName: string;
   sysUrl: string;
@@ -69,12 +69,15 @@ interface CacheFormState {
   arrayHandle: ArrayHandle;
   dbLoggingValue: DbLoggingValue;
   environment: Environment;
+  
   addCommitAfterEachQuery: boolean;
+  
   includeSysCache: boolean;
   includeTxnCache: boolean;
   includeAccessMaster: boolean;
   includeApiMaster: boolean;
   includeApiParameter: boolean;
+  includeCertificateDetails: boolean;
 
   mode: GenerationMode;
   serverCacheHost: string;
@@ -89,6 +92,20 @@ interface CacheFormState {
   dmzUrlFieldName: string;
   httpTimeoutFieldName: string;
   dbLoggingFieldName: string;
+
+  // Certificate Fields
+  certSysApiName: string;
+  certBrokerName: string;
+  certDomainName: string;
+  certServiceType: string;
+  certAliasName: string;
+  certPath: string;
+  certThumbprint: string;
+  certType: string;
+  certExpiryDate: string;
+  certUpdatedBy: string;
+  certBankSpoc: string;
+  certRemarks: string;
 }
 
 interface GeneratedStatement {
@@ -114,6 +131,9 @@ const ENV_SCHEMA_MAP: Record<Environment, string> = {
 const ENVIRONMENTS: Environment[] = ["DEV", "SIT", "UAT", "PROD"];
 const NULL_LIT = "'NULL'";
 const NOW = "TRUNC(SYSDATE)";
+
+// Input styling used across the form
+const inputClass = "w-full p-2.5 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-200 transition-all";
 
 const stripEdgeUnderscores = (value: string) => value.replace(/^_+|_+$/g, "");
 
@@ -155,7 +175,6 @@ const DEFAULT_FORM: CacheFormState = {
   sourceIds: "",
   thirdPartyUrl: "",
   dmzUrl: "",
-  wireDmzInMaster: false,
   contentCheck: "Y",
   serviceName: "",
   sysUrl: "",
@@ -164,15 +183,32 @@ const DEFAULT_FORM: CacheFormState = {
   arrayHandle: "O",
   dbLoggingValue: "N",
   environment: "DEV",
-  addCommitAfterEachQuery: false,
+  
+  addCommitAfterEachQuery: true,
+  
   includeSysCache: true,
   includeTxnCache: true,
   includeAccessMaster: true,
   includeApiMaster: true,
   includeApiParameter: true,
+  includeCertificateDetails: false,
+  
   mode: "SQL",
   serverCacheHost: "10.177.44.[21-27]:8002",
   ...computeDefaultFieldNames("", "", ""),
+  
+  certSysApiName: "",
+  certBrokerName: "MISC_SYS",
+  certDomainName: "",
+  certServiceType: "INBOUND",
+  certAliasName: "",
+  certPath: "/opt/IBM/EndPoint_Public",
+  certThumbprint: "",
+  certType: "ENCRYPTION_DECRYPTION",
+  certExpiryDate: "",
+  certUpdatedBy: "",
+  certBankSpoc: "",
+  certRemarks: "",
 };
 
 // ============================================================================
@@ -187,6 +223,16 @@ function parseSourceIds(raw: string): string[] {
     .split("|")
     .map((s) => s.trim())
     .filter(Boolean);
+}
+
+function formatExpiryDate(isoDate: string): string {
+  if (!isoDate) return "";
+  const parts = isoDate.split("-");
+  if (parts.length !== 3) return isoDate;
+  const [year, month, day] = parts;
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthStr = months[parseInt(month, 10) - 1];
+  return `${day}-${monthStr}-${year}`;
 }
 
 function insertStmt(
@@ -211,6 +257,9 @@ function generateCacheStatements(form: CacheFormState): GeneratedStatement[] {
   const allowedSource = sourceIds.join("|");
   const statements: GeneratedStatement[] = [];
 
+  const appendCommit = (sql: string) => 
+    form.addCommitAfterEachQuery ? `${sql}\nCOMMIT;` : sql;
+
   const cacheColumns = [
     "FIELD_NAME",
     "FIELD_VALUE",
@@ -224,12 +273,13 @@ function generateCacheStatements(form: CacheFormState): GeneratedStatement[] {
     "SERVICE_NAME",
     "CREATION_TIME",
   ];
+  
   const cacheRow = (
     fieldName: string,
     fieldValue: string,
     requestAction: string,
   ): string =>
-    insertStmt(schema, "CACHE_DETAILS", cacheColumns, [
+    appendCommit(insertStmt(schema, "CACHE_DETAILS", cacheColumns, [
       lit(fieldName),
       lit(fieldValue),
       lit(requestAction),
@@ -241,7 +291,7 @@ function generateCacheStatements(form: CacheFormState): GeneratedStatement[] {
       lit(dest),
       lit(form.serviceName),
       NOW,
-    ]);
+    ]));
 
   if (form.includeSysCache) {
     statements.push({
@@ -322,13 +372,12 @@ function generateCacheStatements(form: CacheFormState): GeneratedStatement[] {
   }
 
   if (form.includeAccessMaster) {
-    // Whitelisted-source records — ST is always excluded per business rule.
     sourceIds
       .filter((id) => id.toUpperCase() !== "ST")
       .forEach((id) => {
         statements.push({
           section: "Access Master",
-          content: insertStmt(
+          content: appendCommit(insertStmt(
             schema,
             "THIRD_PARTY_API_ACCESS_MASTER",
             [
@@ -341,109 +390,146 @@ function generateCacheStatements(form: CacheFormState): GeneratedStatement[] {
               "MODIFIED_DATE_TIME",
             ],
             [lit(dest), lit(type), lit(subtype), lit(id), "'Y'", NOW, NOW],
-          ),
+          )),
         });
       });
   }
 
   if (form.includeApiMaster) {
     const dmzProvided = form.dmzUrl.trim().length > 0;
-    const routeUrl =
-      form.wireDmzInMaster && dmzProvided ? lit(form.dmzUrl) : NULL_LIT;
-    const routeUrlCache =
-      form.wireDmzInMaster && dmzProvided
-        ? lit(form.dmzUrlFieldName)
-        : NULL_LIT;
+    
+    // Automatically use dmzUrl for ROUTE_URL / ROUTE_URL_CACHE if provided, else NULL
+    const routeUrl = dmzProvided ? lit(form.dmzUrl) : NULL_LIT;
+    const routeUrlCache = dmzProvided ? lit(form.dmzUrlFieldName) : NULL_LIT;
+
+    const apiMasterColumns = [
+      "DESTINATION",
+      "TXN_TYPE",
+      "TXN_SUB_TYPE",
+      "ACTUAL_URL",
+      "ROUTE_URL",
+      "ACTUAL_URL_CACHE",
+      "ROUTE_URL_CACHE",
+      "ALLOWED_SOURCE",
+      "ALLOWED_SOURCE_CACHE",
+      "CREATION_DATE_TIME",
+      "MODIFIED_DATE_TIME",
+      "DB_ENCRYPTED",
+      "DB_ENCRYPTED_CACHE",
+      "CONTENT_CHECK",
+      "CONTENT_CHECK_CACHE",
+      "HTTPTIMEOUT",
+      "HTTPTIMEOUT_CACHE",
+      "SYS_URL_CACHE",
+      "SYS_URL",
+      "SYS_SERVICE",
+      "SYS_SERVICE_CACHE",
+    ];
+
+    const apiMasterValues = [
+      lit(dest),
+      lit(type),
+      lit(subtype),
+      lit(form.thirdPartyUrl),
+      routeUrl,
+      lit(form.thirdPartyUrlFieldName),
+      routeUrlCache,
+      lit(allowedSource),
+      lit(form.sourceIdFieldName),
+      NOW,
+      NOW,
+      NULL_LIT,
+      NULL_LIT,
+      lit(form.contentCheck),
+      lit(form.contentCheckFieldName),
+      lit(form.httpTimeout),
+      lit(form.httpTimeoutFieldName),
+      lit(form.sysUrlFieldName),
+      lit(form.sysUrl),
+      lit(form.serviceName),
+      lit(form.sysServiceFieldName),
+    ];
+
+    // Only append these columns for PROD environments
+    if (form.environment === "PROD") {
+      apiMasterColumns.push("SYS_TIMEOUT", "SYS_HTTPTIMEOUT_CACHE");
+      apiMasterValues.push(lit(form.sysHttpTimeout), lit(form.sysHttpTimeoutFieldName));
+    }
+
     statements.push({
       section: "API Master",
-      content: insertStmt(
+      content: appendCommit(insertStmt(
         schema,
         "THIRD_PARTY_API_MASTER",
-        [
-          "DESTINATION",
-          "TXN_TYPE",
-          "TXN_SUB_TYPE",
-          "ACTUAL_URL",
-          "ROUTE_URL",
-          "ACTUAL_URL_CACHE",
-          "ROUTE_URL_CACHE",
-          "ALLOWED_SOURCE",
-          "ALLOWED_SOURCE_CACHE",
-          "CREATION_DATE_TIME",
-          "MODIFIED_DATE_TIME",
-          "DB_ENCRYPTED",
-          "DB_ENCRYPTED_CACHE",
-          "CONTENT_CHECK",
-          "CONTENT_CHECK_CACHE",
-          "HTTPTIMEOUT",
-          "HTTPTIMEOUT_CACHE",
-          "SYS_URL_CACHE",
-          "SYS_URL",
-          "SYS_SERVICE",
-          "SYS_SERVICE_CACHE",
-        ],
-        [
-          lit(dest),
-          lit(type),
-          lit(subtype),
-          lit(form.thirdPartyUrl),
-          routeUrl,
-          lit(form.thirdPartyUrlFieldName),
-          routeUrlCache,
-          lit(allowedSource),
-          lit(form.sourceIdFieldName),
-          NOW,
-          NOW,
-          NULL_LIT,
-          NULL_LIT,
-          lit(form.contentCheck),
-          lit(form.contentCheckFieldName),
-          lit(form.httpTimeout),
-          lit(form.httpTimeoutFieldName),
-          lit(form.sysUrlFieldName),
-          lit(form.sysUrl),
-          lit(form.serviceName),
-          lit(form.sysServiceFieldName),
-        ],
-      ),
+        apiMasterColumns,
+        apiMasterValues
+      )),
     });
   }
 
   if (form.includeApiParameter) {
     statements.push({
       section: "API Parameter",
-      content: insertStmt(
+      content: appendCommit(insertStmt(
         schema,
         "THIRD_PARTY_API_PARAMETER",
         ["DESTINATION", "CREATION_DATE_TIME"],
         [lit(dest), NOW],
-      ),
+      )),
+    });
+  }
+
+  if (form.includeCertificateDetails) {
+    statements.push({
+      section: "Certificate Details",
+      content: appendCommit(insertStmt(
+        schema,
+        "CERTIFICATE_DETAILS",
+        [
+          "SYS_API_NAME",
+          "BROKER_NAME",
+          "DOMAIN_NAME",
+          "DESTINATION",
+          "SERVICE_TYPE",
+          "ALIAS_NAME",
+          "CERT_PATH",
+          "THUMBPRINT",
+          "CERTIFICATE_TYPE",
+          "EXPIRY_DATE",
+          "UPDATED_BY",
+          "BANK_SPOC",
+          "REMARKS"
+        ],
+        [
+          lit(form.certSysApiName || form.serviceName),
+          lit(form.certBrokerName),
+          lit(form.certDomainName),
+          lit(dest),
+          lit(form.certServiceType),
+          lit(form.certAliasName),
+          lit(form.certPath),
+          lit(form.certThumbprint),
+          lit(form.certType),
+          lit(formatExpiryDate(form.certExpiryDate)),
+          lit(form.certUpdatedBy),
+          lit(form.certBankSpoc),
+          lit(form.certRemarks)
+        ]
+      ))
     });
   }
 
   return statements;
 }
 
-function buildScript(
-  statements: GeneratedStatement[],
-  addCommit: boolean,
-): string {
-  const lines = statements.map((s) =>
-    addCommit ? `${s.content}\nCOMMIT;` : s.content,
-  );
-  return lines.join("\n\n");
+function buildScript(statements: GeneratedStatement[]): string {
+  return statements.map((s) => s.content).join("\n\n");
 }
 
 // ============================================================================
 // Pure generation logic — Server Cache mode
 // ============================================================================
 
-/**
- * Builds only the CACHE_DETAILS-equivalent FIELD_NAME/FIELD_VALUE pairs
- * (SYS + TXN cache keys) — matching the shape the /cache/v1/loadCache
- * endpoint expects, with none of the SQL-only columns (REQUEST_ACTION,
- * BACKEND_TYPE, etc).
- */
 function generateServerCacheFields(form: CacheFormState): ServerCacheField[] {
   const fields: ServerCacheField[] = [];
   const sourceIds = parseSourceIds(form.sourceIds);
@@ -589,10 +675,13 @@ const SECTION_TOGGLES: {
     label: "API Parameter",
     hint: "Destination-level parameter row",
   },
+  {
+    key: "includeCertificateDetails",
+    label: "Certificate Details",
+    hint: "Generate insert statement for CERTIFICATE_DETAILS",
+  },
 ];
 
-// Only these two apply to server cache mode — Access/API Master/Parameter
-// are SQL-table-only concepts and don't have a loadCache equivalent.
 const SERVER_CACHE_TOGGLES = SECTION_TOGGLES.filter(
   (t) => t.key === "includeSysCache" || t.key === "includeTxnCache",
 );
@@ -605,7 +694,6 @@ export default function CacheGeneratorTool({ onBack }: { onBack: () => void }) {
   const [statements, setStatements] = useState<GeneratedStatement[] | null>(
     null,
   );
-  // const [copied, setCopied] = useState<string | null>(null);
 
   const set = <K extends keyof CacheFormState>(
     key: K,
@@ -676,12 +764,7 @@ export default function CacheGeneratorTool({ onBack }: { onBack: () => void }) {
     ]);
   }, [form]);
 
-  const fullScript = statements
-    ? buildScript(
-        statements,
-        form.mode === "SQL" && form.addCommitAfterEachQuery,
-      )
-    : "";
+  const fullScript = statements ? buildScript(statements) : "";
 
   return (
     <div className="min-h-[calc(100vh-140px)] lg:h-[calc(100vh-140px)] flex flex-col gap-4 sm:gap-6 font-sans">
@@ -825,19 +908,6 @@ export default function CacheGeneratorTool({ onBack }: { onBack: () => void }) {
                   />
                 )}
               </div>
-              {form.mode === "SQL" && (
-                <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 pl-1">
-                  <input
-                    type="checkbox"
-                    checked={form.wireDmzInMaster}
-                    onChange={(e) => set("wireDmzInMaster", e.target.checked)}
-                    className="rounded accent-indigo-600"
-                    disabled={!form.dmzUrl.trim()}
-                  />
-                  Route API Master through DMZ URL (otherwise the cache entry is
-                  created but left unwired, same as the reference)
-                </label>
-              )}
             </div>
           </div>
 
@@ -988,6 +1058,113 @@ export default function CacheGeneratorTool({ onBack }: { onBack: () => void }) {
             </div>
           </div>
 
+          {/* -------------------- Certificate Details Section -------------------- */}
+          {form.mode === "SQL" && form.includeCertificateDetails && (
+            <div className="bg-indigo-50 dark:bg-indigo-900/10 p-4 sm:p-5 rounded-3xl border border-indigo-200 dark:border-indigo-800 shadow-sm transition-all">
+              <h3 className="font-bold mb-3 flex items-center gap-2 dark:text-white text-sm uppercase tracking-wider">
+                <Shield size={16} className="text-indigo-500" /> Certificate Details
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Field label="SYS API Name">
+                  <input
+                    placeholder={form.serviceName || "e.g. thirdPartyTealRBIH_sys"}
+                    value={form.certSysApiName}
+                    className={inputClass}
+                    onChange={(e) => set("certSysApiName", e.target.value)}
+                  />
+                </Field>
+                <Field label="Broker Name">
+                  <input
+                    placeholder="e.g. MISC_SYS"
+                    value={form.certBrokerName}
+                    className={inputClass}
+                    onChange={(e) => set("certBrokerName", e.target.value)}
+                  />
+                </Field>
+                <Field label="Domain Name">
+                  <input
+                    placeholder="e.g. app.tealindia.in"
+                    value={form.certDomainName}
+                    className={inputClass}
+                    onChange={(e) => set("certDomainName", e.target.value)}
+                  />
+                </Field>
+                <Field label="Service Type">
+                  <input
+                    placeholder="e.g. INBOUND"
+                    value={form.certServiceType}
+                    className={inputClass}
+                    onChange={(e) => set("certServiceType", e.target.value)}
+                  />
+                </Field>
+                <Field label="Alias Name">
+                  <input
+                    placeholder="e.g. TEAL_RBIH.cer"
+                    value={form.certAliasName}
+                    className={inputClass}
+                    onChange={(e) => set("certAliasName", e.target.value)}
+                  />
+                </Field>
+                <Field label="Cert Path">
+                  <input
+                    placeholder="e.g. /opt/IBM/EndPoint_Public"
+                    value={form.certPath}
+                    className={inputClass}
+                    onChange={(e) => set("certPath", e.target.value)}
+                  />
+                </Field>
+                <Field label="Thumbprint" className="sm:col-span-2">
+                  <input
+                    placeholder="Cert Thumbprint"
+                    value={form.certThumbprint}
+                    className={inputClass}
+                    onChange={(e) => set("certThumbprint", e.target.value)}
+                  />
+                </Field>
+                <Field label="Certificate Type">
+                  <input
+                    placeholder="e.g. ENCRYPTION_DECRYPTION"
+                    value={form.certType}
+                    className={inputClass}
+                    onChange={(e) => set("certType", e.target.value)}
+                  />
+                </Field>
+                <Field label="Expiry Date (Select with Calendar)">
+                  <input
+                    type="date"
+                    value={form.certExpiryDate}
+                    className={inputClass}
+                    onChange={(e) => set("certExpiryDate", e.target.value)}
+                  />
+                </Field>
+                <Field label="Updated By">
+                  <input
+                    placeholder="e.g. Deepraj Pagare"
+                    value={form.certUpdatedBy}
+                    className={inputClass}
+                    onChange={(e) => set("certUpdatedBy", e.target.value)}
+                  />
+                </Field>
+                <Field label="Bank SPOC">
+                  <input
+                    placeholder="e.g. Harshad Solanke"
+                    value={form.certBankSpoc}
+                    className={inputClass}
+                    onChange={(e) => set("certBankSpoc", e.target.value)}
+                  />
+                </Field>
+                <Field label="Remarks" className="sm:col-span-2">
+                  <input
+                    placeholder="e.g. Configuration under CR 72"
+                    value={form.certRemarks}
+                    className={inputClass}
+                    onChange={(e) => set("certRemarks", e.target.value)}
+                  />
+                </Field>
+              </div>
+            </div>
+          )}
+
           {form.mode === "SERVER_CACHE" && (
             <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
               <h3 className="font-bold mb-3 flex items-center gap-2 dark:text-white text-sm uppercase tracking-wider">
@@ -1069,7 +1246,6 @@ export default function CacheGeneratorTool({ onBack }: { onBack: () => void }) {
         </div>
 
         {/* -------------------- Output column -------------------- */}
-
         <div className="flex-1 bg-slate-950 rounded-3xl border border-slate-800 flex flex-col shadow-2xl overflow-hidden h-full min-h-[420px] lg:min-h-0">
           <div className="flex-none p-3 sm:p-4 bg-slate-900 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 border-b border-slate-800">
             <div className="flex items-center gap-2">
@@ -1128,6 +1304,3 @@ export default function CacheGeneratorTool({ onBack }: { onBack: () => void }) {
     </div>
   );
 }
-
-const inputClass =
-  "w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 ring-indigo-500 dark:text-white";

@@ -414,16 +414,6 @@ function validateStatement(
           tuples.forEach((tuple, tIdx) => {
             const vals = splitArgs(tuple);
 
-            // Rule: No spaces allowed in FIELD_NAME or FIELD_VALUE parameter values
-            // [fieldNameIdx, fieldValueIdx].forEach(idx => {
-            //   if (idx !== -1 && vals[idx]) {
-            //     const valInside = vals[idx].replace(/^'|'$/g, '');
-            //     if (valInside.includes(' ')) {
-            //       push('error', `Space not allowed in parameter value for ${columns[idx]} (row ${tIdx + 1}).`);
-            //     }
-            //   }
-            // });
-
             // Rule: If FIELD_NAME contains EIS_DMZ, FIELD_VALUE must have siservices.bank.sbi
             if (environment === 'PROD') {
               if (fieldNameIdx !== -1 && fieldValueIdx !== -1 && vals[fieldNameIdx] && vals[fieldValueIdx]) {
@@ -484,10 +474,25 @@ function validateStatement(
     push('error', 'EISAPP restricted table: CR_NO field prohibited.');
   }
 
+  // Rule 10: PROD specific columns for THIRD_PARTY_API_MASTER
+  const usesApiMaster = extractTableRefs(stmt.text).some(ref => 
+    ref.parts.some(p => p.toUpperCase() === 'THIRD_PARTY_API_MASTER')
+  );
+
+  if (environment === 'PROD' && usesApiMaster) {
+    const missingColumns = [];
+    if (!upper.includes('SYS_TIMEOUT')) missingColumns.push('SYS_TIMEOUT');
+    if (!upper.includes('SYS_HTTPTIMEOUT_CACHE')) missingColumns.push('SYS_HTTPTIMEOUT_CACHE');
+    
+    if (missingColumns.length > 0) {
+      push('error', `PROD environment requires ${missingColumns.join(' and ')} column(s) for THIRD_PARTY_API_MASTER table.`);
+    }
+  }
+
   return messages;
 }
 
-/** Rule 10: flags CACHE_DETAILS inserts that reuse the same cache key name. */
+/** Rule 11: flags CACHE_DETAILS inserts that reuse the same cache key name. */
 function detectDuplicateCacheKeys(queryReports: QueryReport[]): void {
   const cacheKeyToQueries: Record<string, number[]> = {};
 
