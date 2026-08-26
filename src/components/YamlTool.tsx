@@ -425,7 +425,7 @@ function validateStatement(
             // });
 
             // Rule: If FIELD_NAME contains EIS_DMZ, FIELD_VALUE must have siservices.bank.sbi
-            if (FormData.environment == "PROD") {
+            if (environment === 'PROD') {
               if (fieldNameIdx !== -1 && fieldValueIdx !== -1 && vals[fieldNameIdx] && vals[fieldValueIdx]) {
                   const fnVal = vals[fieldNameIdx].replace(/^'|'$/g, '');
                   const fvVal = vals[fieldValueIdx].replace(/^'|'$/g, '');
