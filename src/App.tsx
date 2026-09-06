@@ -17,7 +17,9 @@ import {
   Key,
   Coffee,
   FileText,
-  Network
+  Network,
+  TextIcon,
+  GitCompare
 } from "lucide-react";
 
 import YamlTool from "./components/YamlTool";
@@ -41,6 +43,8 @@ import JavaDecompilerTool from "./components/Javadecompilertool";
 import SwaggerAutomator from "./modules/swagger/SwaggerAutomator";
 import SwaggerGenerator from "./modules/swagger/SwaggerGenerator";
 import NetcatTesterPanel from "./components/NetcatTesterPanel";
+import SwaggerEditor from "./components/SwaggerEditor";
+import TextDiffViewer from "./components/TextDiffViewer";
 
 // ─── TOOL CONFIGURATION DEFINITION ──────────────────────────────────────
 // To add a new tool, simply append an object to this array.
@@ -146,6 +150,25 @@ const TOOLS_CONFIG = [
     icon: Network,
     roles: ["*"], 
     render: () => <NetcatTesterPanel />,
+  },
+  {
+    id: "swaggeredit",
+    title: "Swagger Editor",
+    desc: "Edit swaggers",
+    headerTitle: "Swagger Editor",
+    icon: Zap,
+    roles: ["*"],
+    render: () => <SwaggerEditor />,
+  },
+  {
+    
+    id: "textdiff",
+    title: "Text Difference",
+    desc: "View differences between text files",
+    headerTitle: "Text Difference Viewer",
+    icon: GitCompare,
+    roles: ["*"],
+    render: () => <TextDiffViewer />,
   }
 ];
 
